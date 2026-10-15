@@ -7,8 +7,10 @@ const messages: Record<string, string> = {
     "That email is already registered with a password. Log in with your email and password instead.",
 };
 
-export default async function LoginPage({ searchParams, } : { searchParams: Promise<{ error?: string }>; }) {
-  const { error } = await searchParams;
+export default async function LoginPage({ searchParams, } : { searchParams: Promise<{ error?: string; callbackUrl?: string }>; }) {
+  const { error, callbackUrl } = await searchParams;
+  const safeCallback =
+    callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : undefined;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 p-6">
@@ -18,11 +20,11 @@ export default async function LoginPage({ searchParams, } : { searchParams: Prom
           {messages[error] ?? "Sign-in failed. Please try again."}
         </p>
       )}
-      <form action={googleSignInAction}>
+      <form action={googleSignInAction.bind(null, safeCallback)}>
         <button className="w-full rounded border p-2">Continue with Google</button>
       </form>
       <p className="text-center text-sm text-gray-500">or</p>
-      <LoginForm />
+      <LoginForm callbackUrl={safeCallback} />
       <p className="text-sm">
         No account? <Link href="/register" className="underline">Register</Link>
       </p>

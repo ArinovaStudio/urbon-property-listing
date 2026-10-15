@@ -6,17 +6,24 @@ import { signIn, signOut } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { loginSchema, registerSchema } from "@/lib/validations";
 
+function safeRedirect(url: unknown): string {
+  return typeof url === "string" && url.startsWith("/") && !url.startsWith("//")
+    ? url
+    : "/dashboard";
+}
+
 export async function loginAction(
   _prev: string | undefined,
   formData: FormData,
 ) {
+  const redirectTo = safeRedirect(formData.get("callbackUrl"));
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return parsed.error.issues[0].message;
   try {
-    await signIn("credentials", { ...parsed.data, redirectTo: "/dashboard" });
+    await signIn("credentials", { ...parsed.data, redirectTo });
   } catch (e) {
     if (e instanceof AuthError) return "Invalid email or password.";
-    throw e; // a successful sign-in redirects by throwing; it must not be swallowed
+    throw e; 
   }
 }
 
@@ -53,7 +60,7 @@ export async function registerAction(_prev: string | undefined, formData: FormDa
       name,
       email,
       passwordHash: await bcrypt.hash(password, 12),
-      role: role === "OWNER" ? "OWNER" : "BUYER", // agents start as BUYER until approved
+      role: role === "OWNER" ? "OWNER" : "BUYER", 
       agentApplication: application,
     },
   });
@@ -65,6 +72,6 @@ export async function logoutAction() {
   await signOut({ redirectTo: "/login" });
 }
 
-export async function googleSignInAction() {
-  await signIn("google", { redirectTo: "/dashboard" });
+export async function googleSignInAction(callbackUrl?: string) {
+  await signIn("google", { redirectTo: safeRedirect(callbackUrl) });
 }

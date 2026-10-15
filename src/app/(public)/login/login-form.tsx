@@ -3,11 +3,12 @@
 import { useActionState } from "react";
 import { loginAction } from "@/actions/auth";
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [error, formAction, pending] = useActionState(loginAction, undefined);
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
+      <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
       <input name="email" type="email" placeholder="Email" required
         className="rounded border p-2" />
       <input name="password" type="password" placeholder="Password" required

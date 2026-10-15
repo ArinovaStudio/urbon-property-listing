@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
+import { connection } from "next/server";
 
 const categories = [
   { title: "Residential", text: "Apartments, houses and villas to buy or rent.", value: "RESIDENTIAL" },
@@ -14,6 +15,7 @@ const points = [
 ];
 
 export default async function HomePage() {
+  await connection();
   const session = await auth();
 
   return (
