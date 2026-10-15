@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { logoutAction } from "@/modules/identity/actions";
+import { auth } from "@/lib/auth";
+import { logoutAction } from "@/actions/auth";
 
 export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
+  if (session.user.role === "ADMIN") redirect("/admin");
 
   return (
     <main className="mx-auto max-w-sm p-6">

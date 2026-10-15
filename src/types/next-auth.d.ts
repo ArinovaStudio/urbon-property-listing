@@ -2,7 +2,7 @@ import "next-auth";
 import "next-auth/jwt";
 import type { DefaultSession } from "next-auth";
 
-type AppRole = "BUYER" | "AGENT" | "ADMIN";
+type AppRole = "BUYER" | "OWNER" | "AGENT" | "ADMIN";
 
 declare module "next-auth" {
   interface Session {

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LoginForm } from "./login-form";
-import { googleSignInAction } from "@/modules/identity/actions";
+import { googleSignInAction } from "@/actions/auth";
 
 const messages: Record<string, string> = {
   OAuthAccountNotLinked:
