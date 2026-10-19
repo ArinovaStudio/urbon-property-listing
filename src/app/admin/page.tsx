@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { logoutAction } from "@/actions/auth";
+import Link from "next/link";
 
 function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
   return (
@@ -46,9 +47,14 @@ export default async function AdminPage() {
                     <h1 className="text-2xl font-semibold">Admin dashboard</h1>
                     <p className="text-sm text-gray-500">Signed in as {session.user.email}</p>
                 </div>
-                <form action={logoutAction}>
-                    <button className="rounded border px-3 py-2 text-sm">Log out</button>
-                </form>
+                <div className="flex items-center gap-3">
+                    <Link href="/admin/review" className="rounded bg-black px-3 py-2 text-sm text-white">
+                        Review queue
+                    </Link>
+                    <form action={logoutAction}>
+                        <button className="rounded border px-3 py-2 text-sm">Log out</button>
+                    </form>
+                </div>
             </header>
 
             <section className="grid grid-cols-2 gap-3 md:grid-cols-4">

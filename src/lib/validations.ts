@@ -36,3 +36,31 @@ export const registerSchema = z
       ctx.addIssue({ code: "custom", path: ["phone"], message: "Enter a 10-digit Indian mobile number." });
     }
   });
+
+  // Blank form fields arrive as "" — treat them as "not provided".
+const blank = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
+const optText = (max: number) => z.preprocess(blank, z.string().trim().max(max).optional());
+const optInt = z.preprocess(blank, z.coerce.number().int().min(0).optional());
+
+export const listingSchema = z.object({
+  title: z.string().trim().min(5, "Title must be at least 5 characters.").max(120),
+  description: z.string().trim().min(20, "Description must be at least 20 characters.").max(5000),
+  listingType: z.enum(["SALE", "RENT"]),
+  category: z.enum(["RESIDENTIAL", "COMMERCIAL", "LAND"]),
+  propertyType: optText(60),
+  price: z.coerce.number().int("Price must be a whole number.").positive("Enter a price."),
+  areaSqft: optInt,
+  bedrooms: optInt,
+  bathrooms: optInt,
+  addressLine: z.string().trim().min(3, "Enter the street / building."),
+  locality: optText(80),
+  city: z.string().trim().min(2, "Enter the city."),
+  state: z.string().trim().min(2, "Enter the state."),
+  pincode: z.preprocess(blank, z.string().regex(/^\d{6}$/, "Pincode must be 6 digits.").optional()),
+});
+
+export const enquirySchema = z.object({
+  listingId: z.string().min(1),
+  phone: z.preprocess(blank, z.string().regex(/^[6-9]\d{9}$/, "Enter a 10-digit Indian mobile number.").optional()),
+  message: z.string().trim().min(10, "Message must be at least 10 characters.").max(1000),
+});
