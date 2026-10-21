@@ -64,3 +64,25 @@ export const enquirySchema = z.object({
   phone: z.preprocess(blank, z.string().regex(/^[6-9]\d{9}$/, "Enter a 10-digit Indian mobile number.").optional()),
   message: z.string().trim().min(10, "Message must be at least 10 characters.").max(1000),
 });
+
+export const profileSchema = z.object({
+  name: z.string().trim().min(1, "Enter your name.").max(80, "Name must be at most 80 characters."),
+  phone: z.preprocess(blank, z.string().trim().regex(/^[6-9]\d{9}$/, "Enter a 10-digit Indian mobile number.").optional()),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: z
+      .string()
+      .min(8, "New password must be at least 8 characters.")
+      .max(72, "New password must be at most 72 characters."),
+    confirmPassword: z.string().min(1, "Confirm your new password."),
+  })
+  .superRefine((d, ctx) => {
+    if (d.newPassword !== d.confirmPassword) {
+      ctx.addIssue({ code: "custom", path: ["confirmPassword"], message: "Passwords don't match." });
+    } else if (d.newPassword === d.currentPassword) {
+      ctx.addIssue({ code: "custom", path: ["newPassword"], message: "New password must be different from the current one." });
+    }
+  });

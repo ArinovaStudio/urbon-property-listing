@@ -20,6 +20,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  phone         String?
   passwordHash  String?
   role          Role      @default(BUYER)
   createdAt     DateTime  @default(now())

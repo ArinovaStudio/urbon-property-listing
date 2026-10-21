@@ -51,9 +51,12 @@ export default async function DashboardPage({
             )}
           </p>
         </div>
-        <form action={logoutAction}>
-          <button className="rounded border px-3 py-2 text-sm">Log out</button>
-        </form>
+        <div className="flex items-center gap-2">
+          <Link href="/dashboard/profile" className="rounded border px-3 py-2 text-sm">Profile</Link>
+          <form action={logoutAction}>
+            <button className="rounded border px-3 py-2 text-sm">Log out</button>
+          </form>
+        </div>
       </header>
 
       {listing === "submitted" && (
