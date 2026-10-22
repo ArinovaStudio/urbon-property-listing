@@ -3,6 +3,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logoutAction } from "@/actions/auth";
+import { ListingActions } from "./listing-actions";
+
+const BANNERS: Record<string, string> = {
+  submitted: "Listing submitted. It goes live after admin review.",
+  updated: "Listing updated. It's back in admin review and will show in search once approved.",
+  deleted: "Listing deleted.",
+};
 
 export default async function DashboardPage({
   searchParams,
@@ -23,7 +30,7 @@ export default async function DashboardPage({
       email: true,
       role: true,
       agentApplication: true,
-      listings: { orderBy: { createdAt: "desc" } },
+      listings: { where: { status: { not: "ARCHIVED" } }, orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -59,10 +66,8 @@ export default async function DashboardPage({
         </div>
       </header>
 
-      {listing === "submitted" && (
-        <p className="rounded border bg-gray-100 p-3 text-sm">
-          Listing submitted. It goes live after admin review.
-        </p>
+      {listing && BANNERS[listing] && (
+        <p className="rounded border bg-gray-100 p-3 text-sm">{BANNERS[listing]}</p>
       )}
 
       {app && app.status === "PENDING" && (
@@ -104,6 +109,7 @@ export default async function DashboardPage({
                 <div className="text-right">
                   <span className="rounded border px-2 py-0.5 text-xs">{l.status.replace("_", " ")}</span>
                   <div className="mt-1 text-gray-500">{l.viewCount} views</div>
+                  <ListingActions id={l.id} />
                 </div>
               </div>
             ))}

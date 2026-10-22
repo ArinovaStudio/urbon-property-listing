@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { EnquiryForm } from "./enquiry-form";
+import { ReportForm } from "./report-form";
 
 export default async function ListingPage({ params }: { params: Promise<{ slug: string }> }) {
   await connection();
@@ -89,6 +90,11 @@ export default async function ListingPage({ params }: { params: Promise<{ slug: 
           </p>
         )}
       </section>
+      {session && !isOwner && (
+        <div className="border-t pt-4">
+          <ReportForm listingId={listing.id} />
+        </div>
+      )}
     </main>
   );
 }

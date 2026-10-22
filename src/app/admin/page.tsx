@@ -48,12 +48,14 @@ export default async function AdminPage() {
                     <p className="text-sm text-gray-500">Signed in as {session.user.email}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Link href="/admin/review" className="rounded bg-black px-3 py-2 text-sm text-white">
-                        Review queue
-                    </Link>
-                    <form action={logoutAction}>
-                        <button className="rounded border px-3 py-2 text-sm">Log out</button>
-                    </form>
+                    <div className="flex items-center gap-3">
+                        <Link href="/admin/review" className="rounded bg-black px-3 py-2 text-sm text-white">
+                            Review queue
+                        </Link>
+                        <form action={logoutAction}>
+                            <button className="rounded border px-3 py-2 text-sm">Log out</button>
+                        </form>
+                    </div>
                 </div>
             </header>
 

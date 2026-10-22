@@ -65,6 +65,12 @@ export const enquirySchema = z.object({
   message: z.string().trim().min(10, "Message must be at least 10 characters.").max(1000),
 });
 
+export const reportSchema = z.object({
+  listingId: z.string().min(1),
+  reason: z.enum(["SPAM", "FAKE", "DUPLICATE", "WRONG_INFO", "OTHER"]),
+  details: z.preprocess(blank, z.string().trim().max(500).optional()),
+});
+
 export const profileSchema = z.object({
   name: z.string().trim().min(1, "Enter your name.").max(80, "Name must be at most 80 characters."),
   phone: z.preprocess(blank, z.string().trim().regex(/^[6-9]\d{9}$/, "Enter a 10-digit Indian mobile number.").optional()),

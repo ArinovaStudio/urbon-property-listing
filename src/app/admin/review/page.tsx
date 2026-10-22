@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { reviewAgentApplication, reviewListing } from "@/actions/admin";
+import { resolveReport, reviewAgentApplication, reviewListing } from "@/actions/admin";
 
 export default async function ReviewPage() {
   await requireAdmin();
 
-  const [applications, listings] = await Promise.all([
+  const [applications, listings, reports] = await Promise.all([
     prisma.agentApplication.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
@@ -16,6 +16,14 @@ export default async function ReviewPage() {
       where: { status: "PENDING_REVIEW" },
       orderBy: { createdAt: "asc" },
       include: { owner: { select: { email: true, role: true } } },
+    }),
+    prisma.report.findMany({
+      where: { status: "OPEN" },
+      orderBy: { createdAt: "asc" },
+      include: {
+        listing: { select: { title: true, slug: true, status: true } },
+        reporter: { select: { email: true } },
+      },
     }),
   ]);
 
@@ -59,6 +67,27 @@ export default async function ReviewPage() {
             <input name="reason" placeholder="Reject reason (optional)" className={reason} />
             <button name="decision" value="LIVE" className="rounded bg-black px-3 py-1 text-sm text-white">Approve</button>
             <button name="decision" value="REJECTED" className="rounded border px-3 py-1 text-sm">Reject</button>
+          </form>
+        ))}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-medium">Reported listings ({reports.length})</h2>
+        {reports.length === 0 && <p className="text-sm text-gray-500">No open reports.</p>}
+        {reports.map((r) => (
+          <form key={r.id} action={resolveReport} className="mb-3 flex flex-wrap items-center gap-3 rounded border p-3">
+            <input type="hidden" name="id" value={r.id} />
+            <div className="min-w-64 flex-1 text-sm">
+              <Link href={`/listings/${r.listing.slug}`} className="font-bold underline">{r.listing.title}</Link>{" "}
+              <span className="text-gray-500">({r.listing.status})</span>
+              <br />
+              <span className="text-gray-600">
+                {r.reason.replace("_", " ")} · by {r.reporter.email} · {r.createdAt.toLocaleDateString("en-IN")}
+              </span>
+              {r.details && <p className="mt-1 text-gray-700">{r.details}</p>}
+            </div>
+            <button name="decision" value="TAKEDOWN" className="rounded bg-black px-3 py-1 text-sm text-white">Take down</button>
+            <button name="decision" value="DISMISS" className="rounded border px-3 py-1 text-sm">Dismiss</button>
           </form>
         ))}
       </section>
