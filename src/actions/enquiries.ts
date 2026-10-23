@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireLogin } from "@/lib/permissions";
-import { enquirySchema } from "@/lib/validations";
+import { enquirySchema, enquiryStatusSchema } from "@/lib/validations";
+import { NEXT_STATUSES, type EnquiryStatus } from "@/lib/enquiry-status";
 
 export type EnquiryState = { ok?: boolean; error?: string } | undefined;
 
@@ -21,6 +22,16 @@ export async function createEnquiryAction(_prev: EnquiryState, formData: FormDat
 
   if (!listing) return { error: "This listing is no longer available." };
   if (listing.ownerId === session.user.id) return { error: "You can't enquire on your own listing." };
+
+  const active = await prisma.enquiry.findFirst({
+    where: {
+      listingId,
+      senderId: session.user.id,
+      status: { in: ["NEW", "CONTACTED", "VISIT_SCHEDULED"] },
+    },
+    select: { id: true },
+  });
+  if (active) return { error: "You already have an open enquiry on this listing." };
 
   const recent = await prisma.enquiry.count({
     where: {
@@ -44,4 +55,31 @@ export async function createEnquiryAction(_prev: EnquiryState, formData: FormDat
 
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export async function updateEnquiryStatusAction(formData: FormData) {
+  const session = await requireLogin();
+
+  const parsed = enquiryStatusSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return;
+  const { id, status } = parsed.data;
+
+  // Only the owner of the listing this enquiry is on may change it.
+  const enquiry = await prisma.enquiry.findFirst({
+    where: { id, listing: { ownerId: session.user.id } },
+    select: { status: true },
+  });
+  if (!enquiry) return;
+
+  const current = enquiry.status as EnquiryStatus;
+  if (!NEXT_STATUSES[current].includes(status)) return;
+
+  // Matching on the current status makes a double-click or two tabs harmless.
+  await prisma.enquiry.updateMany({
+    where: { id, status: current },
+    data: { status },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/listings/[slug]", "page");
 }

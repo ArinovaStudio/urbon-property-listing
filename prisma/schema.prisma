@@ -93,8 +93,10 @@ enum MediaStatus {
 
 enum EnquiryStatus {
   NEW
-  READ
+  CONTACTED
+  VISIT_SCHEDULED
   CLOSED
+  NOT_INTERESTED
 }
 
 enum ReportReason {
@@ -133,6 +135,17 @@ model Listing {
   latitude         Float?
   longitude        Float?
   reraNumber       String?
+  
+  tier             String?          // featured | curated | vault | syndicate
+  isOffPlan        Boolean          @default(false)
+  badge            String?
+  flags            String[]         @default([])
+  keyFeatures      String[]         @default([])
+  projectedYield   String?
+  titleAr          String?
+  descriptionAr    String?
+  locationAr       String?
+
   status           ListingStatus    @default(DRAFT)
   rejectionReason  String?
   publishedAt      DateTime?
@@ -178,6 +191,7 @@ model Enquiry {
   message   String
   status    EnquiryStatus @default(NEW)
   createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now()) @updatedAt
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
   sender  User    @relation(fields: [senderId], references: [id], onDelete: Cascade)

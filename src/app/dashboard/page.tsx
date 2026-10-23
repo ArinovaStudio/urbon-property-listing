@@ -5,11 +5,40 @@ import { prisma } from "@/lib/prisma";
 import { logoutAction } from "@/actions/auth";
 import { ListingActions } from "./listing-actions";
 
+import { updateEnquiryStatusAction } from "@/actions/enquiries";
+import {
+  ACTION_LABEL,
+  NEXT_STATUSES,
+  STATUS_LABEL,
+  canRevealContact,
+  type EnquiryStatus,
+} from "@/lib/enquiry-status";
+
 const BANNERS: Record<string, string> = {
   submitted: "Listing submitted. It goes live after admin review.",
   updated: "Listing updated. It's back in admin review and will show in search once approved.",
   deleted: "Listing deleted.",
 };
+
+function EnquiryStatusActions({ id, status }: { id: string; status: EnquiryStatus }) {
+  const next = NEXT_STATUSES[status];
+  if (next.length === 0) return null;
+  return (
+    <form action={updateEnquiryStatusAction} className="flex flex-wrap gap-2 pt-1">
+      <input type="hidden" name="id" value={id} />
+      {next.map((s) => (
+        <button
+          key={s}
+          name="status"
+          value={s}
+          className={`rounded border px-2 py-1 text-xs ${s === "CONTACTED" ? "bg-black text-white" : ""}`}
+        >
+          {ACTION_LABEL[s]}
+        </button>
+      ))}
+    </form>
+  );
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -37,14 +66,23 @@ export default async function DashboardPage({
   const canList = user.role === "OWNER" || user.role === "AGENT";
   const app = user.agentApplication;
 
-  const enquiries = canList
-    ? await prisma.enquiry.findMany({
+  const enquiries = canList ? await prisma.enquiry.findMany({
         where: { listing: { ownerId: session.user.id } },
         orderBy: { createdAt: "desc" },
         take: 20,
         include: { listing: { select: { title: true, slug: true } } },
-      })
-    : [];
+      }) : [];
+
+  const sent = await prisma.enquiry.findMany({
+    where: { senderId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    include: {
+      listing: {
+        select: { title: true, slug: true, owner: { select: { name: true, email: true, phone: true } } },
+      },
+    },
+  });
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6">
@@ -117,16 +155,19 @@ export default async function DashboardPage({
         </section>
       )}
 
-      {canList && (
+            {canList && (
         <section>
           <h2 className="mb-2 text-lg font-medium">Received enquiries ({enquiries.length})</h2>
           {enquiries.length === 0 && <p className="text-sm text-gray-500">No enquiries yet.</p>}
           <div className="divide-y rounded border">
             {enquiries.map((e) => (
               <div key={e.id} className="space-y-1 p-3 text-sm">
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between">
                   <span className="font-medium">{e.name}</span>
-                  <span className="text-gray-500">{e.createdAt.toLocaleDateString("en-IN")}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="rounded border px-2 py-0.5 text-xs">{STATUS_LABEL[e.status]}</span>
+                    <span className="text-gray-500">{e.createdAt.toLocaleDateString("en-IN")}</span>
+                  </span>
                 </div>
                 <div className="text-gray-600">
                   {e.email}
@@ -134,6 +175,40 @@ export default async function DashboardPage({
                   <Link href={`/listings/${e.listing.slug}`} className="underline">{e.listing.title}</Link>
                 </div>
                 <p className="whitespace-pre-line">{e.message}</p>
+                {e.status === "NEW" && (
+                  <p className="text-xs text-gray-500">
+                    Accepting shares your phone and email with this buyer.
+                  </p>
+                )}
+                <EnquiryStatusActions id={e.id} status={e.status} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {sent.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-lg font-medium">My enquiries ({sent.length})</h2>
+          <div className="divide-y rounded border">
+            {sent.map((e) => (
+              <div key={e.id} className="space-y-1 p-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <Link href={`/listings/${e.listing.slug}`} className="font-medium underline">
+                    {e.listing.title}
+                  </Link>
+                  <span className="rounded border px-2 py-0.5 text-xs">{STATUS_LABEL[e.status]}</span>
+                </div>
+                {canRevealContact(e.status) ? (
+                  <p className="text-gray-700">
+                    {e.listing.owner.name} · {e.listing.owner.email}
+                    {e.listing.owner.phone && ` · ${e.listing.owner.phone}`}
+                  </p>
+                ) : e.status === "NOT_INTERESTED" ? (
+                  <p className="text-gray-500">The owner isn&apos;t taking this enquiry forward.</p>
+                ) : (
+                  <p className="text-gray-500">Contact details unlock once the owner responds.</p>
+                )}
               </div>
             ))}
           </div>

@@ -92,3 +92,8 @@ export const changePasswordSchema = z
       ctx.addIssue({ code: "custom", path: ["newPassword"], message: "New password must be different from the current one." });
     }
   });
+
+export const enquiryStatusSchema = z.object({
+  id: z.string().min(1),
+  status: z.enum(["CONTACTED", "VISIT_SCHEDULED", "CLOSED", "NOT_INTERESTED"]),
+});
